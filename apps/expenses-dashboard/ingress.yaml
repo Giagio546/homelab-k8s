@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: expenses-dashboard
+  namespace: expenses-dashboard
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Expenses Dashboard"
+    gethomepage.dev/description: "Dashboard spese"
+    gethomepage.dev/group: "Home"
+    gethomepage.dev/icon: "mdi-cash-multiple"
+    gethomepage.dev/href: "https://expenses.k8s.home.arpa"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - expenses.k8s.home.arpa
+  rules:
+    - host: expenses.k8s.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: expenses-dashboard-web
+                port:
+                  number: 4321
