@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s
+
+      containers:
+        - name: n8n
+          image: n8nio/n8n:latest
+          ports:
+            - name: http
+              containerPort: 5678
+
+          env:
+            - name: N8N_HOST
+              value: n8n.k8s.home.arpa
+            - name: N8N_PORT
+              value: "5678"
+            - name: N8N_PROTOCOL
+              value: http
+            - name: WEBHOOK_URL
+              value: http://n8n.k8s.home.arpa/
+            - name: N8N_EDITOR_BASE_URL
+              value: http://n8n.k8s.home.arpa/
+            - name: GENERIC_TIMEZONE
+              value: Europe/Rome
+            - name: N8N_PROXY_HOPS
+              value: "1"
+            - name: N8N_PUSH_BACKEND
+              value: websocket
+            - name: N8N_RESTRICT_FILE_ACCESS_TO
+              value: /notes,/knowledge,/home/node/.n8n
+            - name: NODES_EXCLUDE
+              value: "[]"
+
+          volumeMounts:
+            - name: n8n-data
+              mountPath: /home/node/.n8n
+            - name: notes
+              mountPath: /notes
+            - name: knowledge
+              mountPath: /knowledge
+
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+
+      volumes:
+        - name: n8n-data
+          hostPath:
+            path: /opt/n8n/data
+            type: DirectoryOrCreate
+
+        - name: notes
+          hostPath:
+            path: /srv/notes
+            type: DirectoryOrCreate
+
+        - name: knowledge
+          hostPath:
+            path: /srv/knowledge
+            type: DirectoryOrCreate

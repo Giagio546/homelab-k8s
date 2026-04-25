@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n
+  namespace: n8n
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "n8n"
+    gethomepage.dev/description: "Automation workflows"
+    gethomepage.dev/group: "Home"
+    gethomepage.dev/icon: "n8n.png"
+    gethomepage.dev/href: "http://n8n.k8s.home.arpa"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: n8n.k8s.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: n8n-web
+                port:
+                  number: 5678
