@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frigate
+  namespace: frigate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frigate
+  template:
+    metadata:
+      labels:
+        app: frigate
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s
+
+      containers:
+        - name: frigate
+          image: ghcr.io/blakeblackshear/frigate:stable
+          securityContext:
+            privileged: true
+
+          env:
+            - name: TZ
+              value: Europe/Rome
+            - name: LIBVA_DRIVER_NAME
+              value: iHD
+            - name: FRIGATE_RTSP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-secret
+                  key: FRIGATE_RTSP_PASSWORD
+
+          ports:
+            - name: http
+              containerPort: 5000
+            - name: https-ui
+              containerPort: 8971
+            - name: rtsp
+              containerPort: 8554
+            - name: webrtc-tcp
+              containerPort: 8555
+              protocol: TCP
+            - name: webrtc-udp
+              containerPort: 8555
+              protocol: UDP
+
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media/frigate
+            - name: cache
+              mountPath: /tmp/cache
+            - name: shm
+              mountPath: /dev/shm
+            - name: dri-render
+              mountPath: /dev/dri/renderD128
+            - name: localtime
+              mountPath: /etc/localtime
+              readOnly: true
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              memory: 4Gi
+
+      volumes:
+        - name: config
+          configMap:
+            name: frigate-config
+
+        - name: media
+          hostPath:
+            path: /opt/frigate/storage
+            type: DirectoryOrCreate
+
+        - name: cache
+          emptyDir:
+            medium: Memory
+            sizeLimit: 100Mi
+
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+
+        - name: dri-render
+          hostPath:
+            path: /dev/dri/renderD128
+            type: CharDevice
+
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+            type: File

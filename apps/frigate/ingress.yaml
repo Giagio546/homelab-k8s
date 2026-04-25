@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frigate
+  namespace: frigate
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Frigate"
+    gethomepage.dev/description: "NVR e rilevamento camere"
+    gethomepage.dev/group: "Home"
+    gethomepage.dev/icon: "frigate.png"
+    gethomepage.dev/href: "http://frigate.k8s.home.arpa"
+    gethomepage.dev/widget.type: "frigate"
+    gethomepage.dev/widget.url: "http://frigate.frigate.svc.cluster.local:5000"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: frigate.k8s.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frigate
+                port:
+                  number: 5000
