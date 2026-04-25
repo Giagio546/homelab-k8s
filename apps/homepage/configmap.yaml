@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage
+  namespace: homepage
+data:
+  kubernetes.yaml: |
+    mode: cluster
+  settings.yaml: |
+    title: Homelab
+    language: it
+    target: _self
+  services.yaml: |
+    []
+  bookmarks.yaml: |
+    []
+  widgets.yaml: |
+    []
+  docker.yaml: |
+    {}

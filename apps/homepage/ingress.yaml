@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage
+  namespace: homepage
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Homepage"
+    gethomepage.dev/description: "Homelab dashboard"
+    gethomepage.dev/group: "Kubernetes"
+    gethomepage.dev/icon: "homepage.png"
+    gethomepage.dev/href: "http://homepage.k8s.home.arpa"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: homepage.k8s.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homepage
+                port:
+                  number: 3000
