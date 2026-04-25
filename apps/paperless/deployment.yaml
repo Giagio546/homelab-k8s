@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless
+  namespace: paperless
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless
+  template:
+    metadata:
+      labels:
+        app: paperless
+    spec:
+      nodeSelector:
+        node-type: vps
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: vps
+          effect: NoSchedule
+
+      containers:
+        - name: paperless
+          image: ghcr.io/paperless-ngx/paperless-ngx:latest
+          ports:
+            - name: http
+              containerPort: 8000
+
+          env:
+            - name: PAPERLESS_REDIS
+              value: redis://redis.redis.svc.cluster.local:6379
+
+            - name: PAPERLESS_DBHOST
+              value: postgres.postgres.svc.cluster.local
+            - name: PAPERLESS_DBPORT
+              value: "5432"
+            - name: PAPERLESS_DBNAME
+              value: paperless
+            - name: PAPERLESS_DBUSER
+              value: paperless_user
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secret
+                  key: PAPERLESS_DBPASS
+
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secret
+                  key: PAPERLESS_SECRET_KEY
+
+            - name: PAPERLESS_URL
+              value: http://paperless.k8s.home.arpa
+            - name: PAPERLESS_TIME_ZONE
+              value: Europe/Rome
+            - name: PAPERLESS_OCR_LANGUAGE
+              value: ita+eng
+
+            - name: USERMAP_UID
+              value: "1000"
+            - name: USERMAP_GID
+              value: "1000"
+
+          volumeMounts:
+            - name: paperless-data
+              mountPath: /usr/src/paperless/data
+              subPath: data
+            - name: paperless-data
+              mountPath: /usr/src/paperless/media
+              subPath: media
+            - name: paperless-data
+              mountPath: /usr/src/paperless/export
+              subPath: export
+            - name: paperless-data
+              mountPath: /usr/src/paperless/consume
+              subPath: consume
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: 300m
+              memory: 768Mi
+            limits:
+              memory: 3Gi
+
+      volumes:
+        - name: paperless-data
+          persistentVolumeClaim:
+            claimName: paperless-data

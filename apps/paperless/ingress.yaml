@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paperless
+  namespace: paperless
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Paperless"
+    gethomepage.dev/description: "Document management"
+    gethomepage.dev/group: "Home"
+    gethomepage.dev/icon: "paperless-ngx.png"
+    gethomepage.dev/href: "http://paperless.k8s.home.arpa"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: paperless.k8s.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: paperless
+                port:
+                  number: 8000
