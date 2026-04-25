@@ -66,9 +66,6 @@ spec:
               mountPath: /etc/localtime
               readOnly: true
 
-            - name: openvino-model
-              mountPath: /openvino-model
-
           resources:
             requests:
               cpu: 500m
@@ -106,8 +103,3 @@ spec:
           hostPath:
             path: /etc/localtime
             type: File
-
-        - name: openvino-model
-          hostPath:
-            path: /opt/frigate/openvino-model
-            type: DirectoryOrCreate
