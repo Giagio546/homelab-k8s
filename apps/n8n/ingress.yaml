@@ -9,7 +9,7 @@ metadata:
     gethomepage.dev/description: "Automation workflows"
     gethomepage.dev/group: "Home"
     gethomepage.dev/icon: "n8n.png"
-    gethomepage.dev/href: "http://n8n.k8s.home.arpa"
+    gethomepage.dev/href: "https://n8n.k8s.home.arpa"
 spec:
   ingressClassName: traefik
   tls:
