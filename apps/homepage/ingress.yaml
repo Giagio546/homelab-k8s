@@ -12,6 +12,9 @@ metadata:
     gethomepage.dev/href: "http://homepage.k8s.home.arpa"
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - homepage.k8s.home.arpa
   rules:
     - host: homepage.k8s.home.arpa
       http:

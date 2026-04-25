@@ -14,6 +14,9 @@ metadata:
     gethomepage.dev/widget.url: "http://frigate.frigate.svc.cluster.local:5000"
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - frigate.k8s.home.arpa
   rules:
     - host: frigate.k8s.home.arpa
       http:

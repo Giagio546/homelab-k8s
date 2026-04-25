@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-k8s-home-arpa
+  namespace: traefik
+spec:
+  secretName: wildcard-k8s-home-arpa-tls
+  duration: 8760h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - "*.k8s.home.arpa"
+  issuerRef:
+    name: homelab-local-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
