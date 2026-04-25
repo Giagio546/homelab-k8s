@@ -37,6 +37,13 @@ kind: Ingress
 metadata:
   name: whoami
   namespace: whoami
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Whoami"
+    gethomepage.dev/description: "Test ingress route"
+    gethomepage.dev/group: "Kubernetes"
+    gethomepage.dev/icon: "mdi-test-tube"
+    gethomepage.dev/href: "http://whoami.k8s.home.arpa"
 spec:
   ingressClassName: traefik
   rules:
