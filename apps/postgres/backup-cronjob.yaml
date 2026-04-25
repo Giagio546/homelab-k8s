@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-b2
+  namespace: postgres
+spec:
+  schedule: "0 3 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector:
+            storage: postgres
+          tolerations:
+            - key: dedicated
+              operator: Equal
+              value: vps
+              effect: NoSchedule
+          containers:
+            - name: backup
+              image: postgres:16-bookworm
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_PASSWORD
+                - name: B2_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backblaze-b2-secret
+                      key: B2_KEY_ID
+                - name: B2_APPLICATION_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: backblaze-b2-secret
+                      key: B2_APPLICATION_KEY
+                - name: B2_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: backblaze-b2-secret
+                      key: B2_BUCKET
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  apt-get update
+                  apt-get install -y curl unzip ca-certificates
+
+                  curl -fsSL https://downloads.rclone.org/rclone-current-linux-amd64.zip -o /tmp/rclone.zip
+                  unzip -q /tmp/rclone.zip -d /tmp
+                  cp /tmp/rclone-*-linux-amd64/rclone /usr/local/bin/rclone
+                  chmod +x /usr/local/bin/rclone
+
+                  export RCLONE_CONFIG_B2_TYPE=b2
+                  export RCLONE_CONFIG_B2_ACCOUNT="${B2_KEY_ID}"
+                  export RCLONE_CONFIG_B2_KEY="${B2_APPLICATION_KEY}"
+
+                  TS="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+                  FILE="/tmp/postgres-dumpall-${TS}.sql.gz"
+
+                  echo "Creating dump: ${FILE}"
+                  pg_dumpall -h postgres.postgres.svc.cluster.local -U postgres | gzip > "${FILE}"
+
+                  echo "Uploading to Backblaze B2..."
+                  rclone copy "${FILE}" "b2:${B2_BUCKET}/postgres/"
+
+                  echo "Removing backups older than 30 days..."
+                  rclone delete "b2:${B2_BUCKET}/postgres/" --min-age 30d
+
+                  echo "Backup completed."
