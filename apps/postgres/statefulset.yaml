@@ -14,18 +14,20 @@ spec:
       labels:
         app: postgres
     spec:
+      nodeSelector:
+        storage: postgres
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: vps
+          effect: NoSchedule
       containers:
         - name: postgres
           image: postgres:16
-          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 5432
-              name: postgres
+            - name: postgres
+              containerPort: 5432
           env:
-            - name: POSTGRES_DB
-              value: postgres
-            - name: POSTGRES_USER
-              value: postgres
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -34,7 +36,7 @@ spec:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:
-            - name: data
+            - name: postgres-data
               mountPath: /var/lib/postgresql/data
           readinessProbe:
             exec:
@@ -53,6 +55,6 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 20
       volumes:
-        - name: data
+        - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-data
