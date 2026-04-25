@@ -22,16 +22,15 @@ spec:
           securityContext:
             privileged: true
 
+          envFrom:
+            - secretRef:
+                name: frigate-secret
+
           env:
             - name: TZ
               value: Europe/Rome
             - name: LIBVA_DRIVER_NAME
               value: iHD
-            - name: FRIGATE_RTSP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: frigate-secret
-                  key: FRIGATE_RTSP_PASSWORD
 
           ports:
             - name: http
@@ -50,17 +49,25 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+
             - name: media
               mountPath: /media/frigate
+
             - name: cache
               mountPath: /tmp/cache
+
             - name: shm
               mountPath: /dev/shm
+
             - name: dri-render
               mountPath: /dev/dri/renderD128
+
             - name: localtime
               mountPath: /etc/localtime
               readOnly: true
+
+            - name: openvino-model
+              mountPath: /openvino-model
 
           resources:
             requests:
@@ -71,8 +78,9 @@ spec:
 
       volumes:
         - name: config
-          configMap:
-            name: frigate-config
+          hostPath:
+            path: /opt/frigate/config
+            type: DirectoryOrCreate
 
         - name: media
           hostPath:
@@ -98,3 +106,8 @@ spec:
           hostPath:
             path: /etc/localtime
             type: File
+
+        - name: openvino-model
+          hostPath:
+            path: /opt/frigate/openvino-model
+            type: DirectoryOrCreate
