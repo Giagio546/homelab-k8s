@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paintings-catalog-config
+  namespace: paintings-catalog
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://192.168.8.19:5432/paintings"
+  SPRING_DATASOURCE_USERNAME: "paintings"
+  APP_UPLOAD_DIR: "/app/uploads"

@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paintings-catalog
+  namespace: paintings-catalog
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Paintings Catalog"
+    gethomepage.dev/description: "Catalogo quadri"
+    gethomepage.dev/group: "Home"
+    gethomepage.dev/icon: "mdi-palette"
+    gethomepage.dev/href: "https://paintings.k8s.home.arpa"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - paintings.k8s.home.arpa
+  rules:
+    - host: paintings.k8s.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: paintings-catalog-frontend
+                port:
+                  number: 80

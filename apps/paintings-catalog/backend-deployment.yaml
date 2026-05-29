@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paintings-catalog-backend
+  namespace: paintings-catalog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paintings-catalog-backend
+  template:
+    metadata:
+      labels:
+        app: paintings-catalog-backend
+        app.kubernetes.io/name: paintings-catalog-backend
+    spec:
+      nodeSelector:
+        node-type: vps
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: vps
+          effect: NoSchedule
+
+      containers:
+        - name: backend
+          image: ghcr.io/giagio546/paintings-catalog-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: paintings-catalog-config
+
+          env:
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paintings-catalog-secret
+                  key: SPRING_DATASOURCE_PASSWORD
+
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+
+          readinessProbe:
+            httpGet:
+              path: /api/paintings
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /api/paintings
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: paintings-catalog-uploads
