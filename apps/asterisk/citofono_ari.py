@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Citofono Stasis app: Linphone 100 + Frigate cam_130_h264 via ExternalMedia."""
 from __future__ import annotations
 
@@ -76,9 +76,17 @@ def start_ffmpeg(rtp_host: str, rtp_port: str) -> subprocess.Popen:
         RTSP_URL,
         "-an",
         "-c:v",
-        "copy",
-        "-bsf:v",
-        "dump_extra",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-tune",
+        "zerolatency",
+        "-profile:v",
+        "baseline",
+        "-bf",
+        "0",
+        "-g",
+        "30",
         "-f",
         "rtp",
         "-payload_type",
@@ -126,21 +134,23 @@ def attach_video(phone_id: str) -> None:
     try:
         bridge = ari_request("POST", "/bridges", {"type": "mixing", "name": f"citofono-{phone_id[:8]}"})
         bridge_id = bridge["id"]
+        # Asterisk UDP ExternalMedia only supports connection_type=client (server needs websocket).
+        # Asterisk allocates UNICASTRTP_LOCAL_* for us to send ffmpeg RTP into the bridge.
         em = ari_request(
             "POST",
             "/channels/externalMedia",
             {
                 "app": APP,
-                "external_host": "127.0.0.1:0",
+                "external_host": "127.0.0.1:12000",
                 "format": "h264",
                 "encapsulation": "rtp",
                 "transport": "udp",
-                "connection_type": "server",
+                "connection_type": "client",
                 "direction": "both",
+                "channelVariables": "UNICASTRTP_LOCAL_ADDRESS,UNICASTRTP_LOCAL_PORT",
             },
         )
         em_id = em["id"]
-        # Channel vars may be on create response or need GET
         vars_ = em.get("channelvars") or {}
         rtp_host = vars_.get("UNICASTRTP_LOCAL_ADDRESS")
         rtp_port = vars_.get("UNICASTRTP_LOCAL_PORT")
