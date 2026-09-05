@@ -148,8 +148,8 @@ spec:
               memory: 256Mi
 
         - name: citofono-baresip
-          image: ghcr.io/baresip/docker/baresip:latest
-          imagePullPolicy: IfNotPresent
+          image: baresip-ffmpeg:1.0
+          imagePullPolicy: Never
           env:
             - name: TZ
               value: Europe/Rome
