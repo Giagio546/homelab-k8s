@@ -76,17 +76,9 @@ def start_ffmpeg(rtp_host: str, rtp_port: str) -> subprocess.Popen:
         RTSP_URL,
         "-an",
         "-c:v",
-        "libx264",
-        "-preset",
-        "ultrafast",
-        "-tune",
-        "zerolatency",
-        "-profile:v",
-        "baseline",
-        "-bf",
-        "0",
-        "-g",
-        "30",
+        "copy",
+        "-bsf:v",
+        "h264_mp4toannexb,dump_extra",
         "-f",
         "rtp",
         "-payload_type",
@@ -94,7 +86,8 @@ def start_ffmpeg(rtp_host: str, rtp_port: str) -> subprocess.Popen:
         f"rtp://{rtp_host}:{rtp_port}",
     ]
     LOG.info("starting ffmpeg RTP to %s:%s", rtp_host, rtp_port)
-    return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    logf = open('/tmp/ffmpeg-citofono.log', 'ab', buffering=0)
+    return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=logf)
 
 
 def cleanup_session(phone_id: str) -> None:
@@ -132,8 +125,9 @@ def attach_video(phone_id: str) -> None:
         SESSIONS[phone_id] = {}
 
     try:
-        bridge = ari_request("POST", "/bridges", {"type": "mixing", "name": f"citofono-{phone_id[:8]}", "video_mode": "sfu"})
+        bridge = ari_request("POST", "/bridges", {"type": "mixing", "name": f"citofono-{phone_id[:8]}", "video_mode": "single_src"})
         bridge_id = bridge["id"]
+        LOG.info("bridge created id=%s video_mode=%s", bridge_id, bridge.get("video_mode"))
         # Asterisk UDP ExternalMedia only supports connection_type=client (server needs websocket).
         # Asterisk allocates UNICASTRTP_LOCAL_* for us to send ffmpeg RTP into the bridge.
         em = ari_request(
@@ -166,6 +160,11 @@ def attach_video(phone_id: str) -> None:
 
         ari_request("POST", f"/bridges/{bridge_id}/addChannel", {"channel": phone_id})
         ari_request("POST", f"/bridges/{bridge_id}/addChannel", {"channel": em_id})
+        try:
+            ari_request("POST", f"/bridges/{bridge_id}/videoSource/{em_id}")
+            LOG.info("set videoSource=%s on bridge=%s", em_id, bridge_id)
+        except Exception as e:
+            LOG.warning("set videoSource failed: %s", e)
         try:
             ari_request("POST", f"/channels/{phone_id}/progress")
         except Exception as e:
