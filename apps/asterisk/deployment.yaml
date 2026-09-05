@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asterisk
+  namespace: asterisk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: asterisk
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: asterisk
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: asterisk
+          image: andrius/asterisk:20
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TZ
+              value: Europe/Rome
+            - name: SIP_100_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: asterisk-sip
+                  key: sip-100-password
+            - name: SIP_200_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: asterisk-sip
+                  key: sip-200-password
+            - name: AMI_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: asterisk-sip
+                  key: ami-secret
+          ports:
+            - name: sip-udp
+              containerPort: 5060
+              protocol: UDP
+            - name: sip-tcp
+              containerPort: 5060
+              protocol: TCP
+            - name: ami
+              containerPort: 5038
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config-src
+              readOnly: true
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              # Image already has /etc/asterisk defaults; only overlay ours
+              cp /config-src/extensions.conf /etc/asterisk/extensions.conf
+              cp /config-src/rtp.conf /etc/asterisk/rtp.conf
+              sed -e "s|__SIP_100_PASSWORD__|${SIP_100_PASSWORD}|g" -e "s|__SIP_200_PASSWORD__|${SIP_200_PASSWORD}|g" /config-src/pjsip.conf.template > /etc/asterisk/pjsip.conf
+              sed -e "s|__AMI_SECRET__|${AMI_SECRET}|g" /config-src/manager.conf > /etc/asterisk/manager.conf
+              test -f /etc/asterisk/modules.conf || printf '%s\n' '[modules]' 'autoload=yes' > /etc/asterisk/modules.conf
+              test -f /etc/asterisk/asterisk.conf || printf '%s\n' '[directories](!)' 'astetcdir => /etc/asterisk' 'astmoddir => /usr/lib/asterisk/modules' 'astvarlibdir => /var/lib/asterisk' 'astdbdir => /var/lib/asterisk' 'astkeydir => /var/lib/asterisk' 'astdatadir => /var/lib/asterisk' 'astagidir => /var/share/asterisk/agi-bin' 'astspooldir => /var/spool/asterisk' 'astrundir => /var/run/asterisk' 'astlogdir => /var/log/asterisk' > /etc/asterisk/asterisk.conf
+              ls -la /etc/asterisk | head -40
+              exec asterisk -f -vvv
+          readinessProbe:
+            exec:
+              command: ["asterisk", "-rx", "core show version"]
+            initialDelaySeconds: 25
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: asterisk-config
+              - secret:
+                  name: asterisk-sip
+                  items:
+                    - key: pjsip.conf.template
+                      path: pjsip.conf.template

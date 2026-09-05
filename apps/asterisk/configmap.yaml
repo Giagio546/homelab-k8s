@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: asterisk-config
+  namespace: asterisk
+data:
+  extensions.conf: |
+    [general]
+    static=yes
+    writeprotect=no
+
+    [from-internal]
+    ; Linphone / softphones
+    exten => 100,1,NoOp(Dial Filippo Linphone)
+     same => n,Dial(PJSIP/100,60)
+     same => n,Hangup()
+
+    ; Citofono caller endpoint (used by AMI Originate later)
+    exten => 200,1,NoOp(Citofono self)
+     same => n,Dial(PJSIP/200,30)
+     same => n,Hangup()
+
+    ; Convenience: dial citofono from phone for tests
+    exten => 201,1,NoOp(Test ring Filippo as if citofono)
+     same => n,Dial(PJSIP/100,60)
+     same => n,Hangup()
+
+  rtp.conf: |
+    [general]
+    rtpstart=10000
+    rtpend=10100
+    strictrtp=yes
+
+  http.conf: |
+    [general]
+    enabled=yes
+    bindaddr=0.0.0.0
+    bindport=8088
+
+  manager.conf: |
+    [general]
+    enabled=yes
+    webenabled=no
+    port=5038
+    bindaddr=0.0.0.0
+
+    [ha]
+    secret=__AMI_SECRET__
+    deny=0.0.0.0/0.0.0.0
+    permit=192.168.8.0/255.255.255.0
+    permit=10.42.0.0/255.255.0.0
+    permit=100.64.0.0/255.192.0.0
+    read=system,call,log,verbose,agent,user,config,dtmf,reporting,cdr,originate
+    write=system,call,agent,user,config,originate
