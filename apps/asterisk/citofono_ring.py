@@ -14,7 +14,6 @@ RING_HOST = os.environ.get("RING_HTTP_HOST", "0.0.0.0")
 RING_PORT = int(os.environ.get("RING_HTTP_PORT", "8099"))
 PHONE = os.environ.get("SIP_PHONE", "PJSIP/100")
 CAMERA = os.environ.get("SIP_CAMERA", "PJSIP/300")
-BRIDGE = os.environ.get("CONFBRIDGE", "1")
 CODECS = os.environ.get("SIP_CODECS", "ulaw,h264")
 
 
@@ -36,40 +35,31 @@ def ami_command(actions):
                 if not part:
                     break
                 data += part
-                if b"Response: Goodbye" in data or data.count(b"Response:") >= 3:
+                if b"Response: Goodbye" in data or data.count(b"Response:") >= 2:
                     break
         except socket.timeout:
             pass
     return data.decode("ascii", "replace")
 
 
-def originate_confbridge():
+def originate_video_call():
+    # 1:1 Dial: ConfBridge SFU did not forward video to Linphone.
     login = {"Action": "Login", "Username": AMI_USER, "Secret": AMI_SECRET}
-    phone = {
+    call = {
         "Action": "Originate",
         "Channel": PHONE,
-        "Application": "ConfBridge",
-        "Data": f"{BRIDGE},citofono_bridge,citofono_user",
+        "Application": "Dial",
+        "Data": f"{CAMERA},,",
         "CallerID": "Citofono <200>",
         "Async": "true",
         "Timeout": "45000",
         "Codecs": CODECS,
     }
-    cam = {
-        "Action": "Originate",
-        "Channel": CAMERA,
-        "Application": "ConfBridge",
-        "Data": f"{BRIDGE},citofono_bridge,citofono_cam",
-        "CallerID": "CamPortone <300>",
-        "Async": "true",
-        "Timeout": "15000",
-        "Codecs": CODECS,
-    }
     logoff = {"Action": "Logoff"}
-    raw = ami_command([login, phone, cam, logoff])
+    raw = ami_command([login, call, logoff])
     if "Authentication accepted" not in raw or "Originate successfully queued" not in raw:
         raise RuntimeError(raw[:800])
-    return {"ok": True, "ami": "queued"}
+    return {"ok": True, "ami": "queued", "mode": "dial"}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -89,7 +79,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"ok": True})
         if self.path.startswith("/ring"):
             try:
-                return self._send(200, originate_confbridge())
+                return self._send(200, originate_video_call())
             except Exception as e:
                 LOG.exception("ring failed")
                 return self._send(500, {"ok": False, "error": str(e)[:500]})
@@ -101,7 +91,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     srv = ThreadingHTTPServer((RING_HOST, RING_PORT), Handler)
-    LOG.info("ring HTTP on %s:%s (ConfBridge %s + %s)", RING_HOST, RING_PORT, PHONE, CAMERA)
+    LOG.info("ring HTTP on %s:%s (Dial %s -> %s)", RING_HOST, RING_PORT, PHONE, CAMERA)
     srv.serve_forever()
 
 
