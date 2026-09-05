@@ -94,7 +94,7 @@ def start_ffmpeg(rtp_host: str, rtp_port: str) -> subprocess.Popen:
         f"rtp://{rtp_host}:{rtp_port}",
     ]
     LOG.info("starting ffmpeg RTP to %s:%s", rtp_host, rtp_port)
-    return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def cleanup_session(phone_id: str) -> None:
@@ -132,7 +132,7 @@ def attach_video(phone_id: str) -> None:
         SESSIONS[phone_id] = {}
 
     try:
-        bridge = ari_request("POST", "/bridges", {"type": "mixing", "name": f"citofono-{phone_id[:8]}"})
+        bridge = ari_request("POST", "/bridges", {"type": "mixing", "name": f"citofono-{phone_id[:8]}", "video_mode": "sfu"})
         bridge_id = bridge["id"]
         # Asterisk UDP ExternalMedia only supports connection_type=client (server needs websocket).
         # Asterisk allocates UNICASTRTP_LOCAL_* for us to send ffmpeg RTP into the bridge.
