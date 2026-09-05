@@ -148,7 +148,7 @@ spec:
               memory: 256Mi
 
         - name: citofono-baresip
-          image: debian:bookworm-slim
+          image: ghcr.io/baresip/docker/baresip:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
@@ -167,17 +167,11 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
+            - |
               set -euo pipefail
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update -qq
-              apt-get install -y -qq --no-install-recommends baresip ffmpeg ca-certificates procps >/dev/null
               mkdir -p /root/.baresip
-              sed "s|__SIP_300_PASSWORD__|${SIP_300_PASSWORD}|g" /baresip-src/accounts > /root/.baresip/accounts
+              sed "s|__SIP_300_PASSWORD__||g" /baresip-src/accounts > /root/.baresip/accounts
               cp /baresip-src/config /root/.baresip/config
-              # Debian baresip module path may differ
-              if [ -d /usr/lib/baresip/modules ]; then
-                sed -i 's|/usr/local/lib/baresip/modules|/usr/lib/baresip/modules|' /root/.baresip/config
-              fi
               exec baresip -f /root/.baresip -v
           readinessProbe:
             exec:
