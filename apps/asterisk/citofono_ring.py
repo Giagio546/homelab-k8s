@@ -15,6 +15,7 @@ RING_PORT = int(os.environ.get("RING_HTTP_PORT", "8099"))
 PHONE = os.environ.get("SIP_PHONE", "PJSIP/100")
 CAMERA = os.environ.get("SIP_CAMERA", "PJSIP/300")
 BRIDGE = os.environ.get("CONFBRIDGE", "1")
+CODECS = os.environ.get("SIP_CODECS", "ulaw,h264")
 
 
 def ami_command(actions):
@@ -51,6 +52,7 @@ def originate_confbridge():
         "CallerID": "Citofono <200>",
         "Async": "true",
         "Timeout": "45000",
+        "Codecs": CODECS,
     }
     cam = {
         "Action": "Originate",
@@ -60,6 +62,7 @@ def originate_confbridge():
         "CallerID": "CamPortone <300>",
         "Async": "true",
         "Timeout": "15000",
+        "Codecs": CODECS,
     }
     logoff = {"Action": "Logoff"}
     raw = ami_command([login, phone, cam, logoff])

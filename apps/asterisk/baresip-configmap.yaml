@@ -32,6 +32,7 @@ data:
     video_size		1280x720
     video_bitrate		800000
     video_fps		15
+    videnc_format		yuv420p
     sip_verify_server	no
   accounts: |
-    <sip:300@192.168.8.132>;auth_user=300;auth_pass=__SIP_300_PASSWORD__;outbound=sip:192.168.8.132:5060;regint=60;answermode=auto;video_codecs=H264/90000
+    <sip:300@192.168.8.132>;auth_user=300;auth_pass=__SIP_300_PASSWORD__;outbound=sip:192.168.8.132:5060;regint=60;answermode=auto;video_codecs=h264
