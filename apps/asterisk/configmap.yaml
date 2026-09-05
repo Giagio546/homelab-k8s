@@ -24,6 +24,12 @@ data:
     
     exten => 300,1,NoOp(Camera UA)
      same => n,Hangup()
+
+    [citofono-b]
+    ; Mute TX from camera UA (baresip ausine was a continuous 440 Hz tone).
+    exten => s,1,NoOp(Mute camera audio TX)
+     same => n,Set(VOLUME(TX)=0)
+     same => n,Return()
   confbridge.conf: |
     [general]
     

@@ -49,7 +49,7 @@ def originate_video_call():
         "Action": "Originate",
         "Channel": PHONE,
         "Application": "Dial",
-        "Data": f"{CAMERA},,",
+        "Data": f"{CAMERA},,B(citofono-b^s^1)",
         "CallerID": "Citofono <200>",
         "Async": "true",
         "Timeout": "45000",

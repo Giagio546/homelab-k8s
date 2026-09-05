@@ -11,7 +11,6 @@ data:
     module			g711.so
     module			auconv.so
     module			auresamp.so
-    module			ausine.so
     module			aufile.so
     module			avcodec.so
     module			avformat.so
@@ -25,7 +24,8 @@ data:
     module			turn.so
     module			ice.so
     audio_player		aufile
-    audio_source		ausine
+    # no tone: do not use ausine (was continuous 440 Hz)
+    # audio_source left unset so camera UA sends no TX audio
     video_source		avformat,rtsp://10.43.38.49:8554/cam_122
     video_display		fakevideo
     avformat_rtsp_transport	tcp
