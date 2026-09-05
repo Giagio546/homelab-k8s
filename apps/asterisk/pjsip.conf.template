@@ -1,9 +1,7 @@
 [transport-udp]
 type=transport
 protocol=udp
-bind=0.0.0.0:5060
-external_media_address=192.168.8.132
-external_signaling_address=192.168.8.132
+bind=192.168.8.132:5060
 local_net=192.168.8.0/24
 local_net=10.42.0.0/16
 local_net=100.64.0.0/10
@@ -11,7 +9,7 @@ local_net=100.64.0.0/10
 [transport-tcp]
 type=transport
 protocol=tcp
-bind=0.0.0.0:5060
+bind=192.168.8.132:5060
 
 [100]
 type=endpoint
@@ -26,6 +24,7 @@ force_rport=yes
 rewrite_contact=yes
 media_encryption=no
 dtmf_mode=rfc4733
+timers=no
 
 [auth100]
 type=auth
@@ -37,7 +36,8 @@ password=__SIP_100_PASSWORD__
 type=aor
 max_contacts=3
 remove_existing=yes
-qualify_frequency=60
+qualify_frequency=30
+qualify_timeout=5
 
 [200]
 type=endpoint
@@ -50,6 +50,7 @@ direct_media=no
 rtp_symmetric=yes
 force_rport=yes
 rewrite_contact=yes
+timers=no
 
 [auth200]
 type=auth

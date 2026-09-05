@@ -1,0 +1,4 @@
+﻿# Never commit live secrets generated on the workstation
+*.local
+.ami-secret.local
+.ari-secret.local

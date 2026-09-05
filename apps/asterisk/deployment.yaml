@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: asterisk
@@ -41,6 +41,11 @@ spec:
                 secretKeyRef:
                   name: asterisk-sip
                   key: ami-secret
+            - name: ARI_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: asterisk-sip
+                  key: ari-password
           ports:
             - name: sip-udp
               containerPort: 5060
@@ -62,8 +67,10 @@ spec:
               # Image already has /etc/asterisk defaults; only overlay ours
               cp /config-src/extensions.conf /etc/asterisk/extensions.conf
               cp /config-src/rtp.conf /etc/asterisk/rtp.conf
+              cp /config-src/http.conf /etc/asterisk/http.conf
               sed -e "s|__SIP_100_PASSWORD__|${SIP_100_PASSWORD}|g" -e "s|__SIP_200_PASSWORD__|${SIP_200_PASSWORD}|g" /config-src/pjsip.conf.template > /etc/asterisk/pjsip.conf
               sed -e "s|__AMI_SECRET__|${AMI_SECRET}|g" /config-src/manager.conf > /etc/asterisk/manager.conf
+              sed -e "s|__ARI_PASSWORD__|${ARI_PASSWORD}|g" /config-src/ari.conf > /etc/asterisk/ari.conf
               test -f /etc/asterisk/modules.conf || printf '%s\n' '[modules]' 'autoload=yes' > /etc/asterisk/modules.conf
               test -f /etc/asterisk/asterisk.conf || printf '%s\n' '[directories](!)' 'astetcdir => /etc/asterisk' 'astmoddir => /usr/lib/asterisk/modules' 'astvarlibdir => /var/lib/asterisk' 'astdbdir => /var/lib/asterisk' 'astkeydir => /var/lib/asterisk' 'astdatadir => /var/lib/asterisk' 'astagidir => /var/share/asterisk/agi-bin' 'astspooldir => /var/spool/asterisk' 'astrundir => /var/run/asterisk' 'astlogdir => /var/log/asterisk' > /etc/asterisk/asterisk.conf
               ls -la /etc/asterisk | head -40
@@ -80,6 +87,64 @@ spec:
               memory: 256Mi
             limits:
               memory: 1Gi
+        - name: citofono-video
+          image: python:3.12-bookworm
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TZ
+              value: Europe/Rome
+            - name: ARI_HOST
+              value: "127.0.0.1"
+            - name: ARI_PORT
+              value: "8088"
+            - name: ARI_USER
+              value: citofono
+            - name: ARI_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: asterisk-sip
+                  key: ari-password
+            - name: RTSP_URL
+              value: "rtsp://10.43.38.49:8554/cam_130_h264"
+            - name: RING_HTTP_HOST
+              value: "0.0.0.0"
+            - name: RING_HTTP_PORT
+              value: "8099"
+            - name: SIP_ENDPOINT
+              value: "PJSIP/100"
+            - name: CALLER_ID
+              value: "Citofono <200>"
+          ports:
+            - name: ring-http
+              containerPort: 8099
+              protocol: TCP
+          volumeMounts:
+            - name: citofono-app
+              mountPath: /app
+              readOnly: true
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends ffmpeg >/dev/null
+              pip install -q --break-system-packages websockets
+              exec python3 -u /app/citofono_ari.py
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8099
+              host: 127.0.0.1
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            failureThreshold: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 768Mi
       volumes:
         - name: config
           projected:
@@ -91,3 +156,7 @@ spec:
                   items:
                     - key: pjsip.conf.template
                       path: pjsip.conf.template
+        - name: citofono-app
+          configMap:
+            name: citofono-ari-app
+            defaultMode: 0644
