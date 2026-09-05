@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: citofono-baresip
+  namespace: asterisk
+data:
+  config: |
+    poll_method		epoll
+    sip_listen		0.0.0.0:5062
+    module_path		/usr/local/lib/baresip/modules
+    module			stdio.so
+    module			g711.so
+    module			avcodec.so
+    module			avformat.so
+    module			swscale.so
+    module			account.so
+    module			contact.so
+    module			menu.so
+    module		
+    uuid.so
+    audio_player		none
+    audio_source		ausine
+    video_source		avformat,rtsp://10.43.38.49:8554/cam_130_h264
+    video_display		none
+    video_size		1280x720
+    video_bitrate		800000
+    video_fps		15
+    sip_verify_server	no
+  accounts: |
+    300@192.168.8.132;auth_user=300;auth_pass=__SIP_300_PASSWORD__;outbound=sip:192.168.8.132:5060;regint=60;answermode=auto;video_enable=yes;audio_codecs=PCMU/8000/1,PCMA/8000/1;video_codecs=H264/90000

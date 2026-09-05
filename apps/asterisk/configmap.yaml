@@ -1,4 +1,4 @@
-﻿apiVersion: v1
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: asterisk-config
@@ -8,65 +8,71 @@ data:
     [general]
     static=yes
     writeprotect=no
-
+    
     [from-internal]
-    ; Linphone / softphones
     exten => 100,1,NoOp(Dial Filippo Linphone)
      same => n,Dial(PJSIP/100,60)
      same => n,Hangup()
-
-    ; Citofono caller endpoint (used by AMI Originate later)
+    
     exten => 200,1,NoOp(Citofono self)
      same => n,Dial(PJSIP/200,30)
      same => n,Hangup()
-
-    ; Convenience: dial citofono from phone for tests
-    exten => 201,1,NoOp(Test ring Filippo as if citofono)
+    
+    exten => 201,1,NoOp(Test ring Filippo)
      same => n,Dial(PJSIP/100,60)
      same => n,Hangup()
-
-    ; Fallback: AMI Originate Application Stasis / Local into video app
-    [citofono-stasis]
-    exten => s,1,NoOp(Citofono video Stasis)
-     same => n,Stasis(citofono)
+    
+    exten => 300,1,NoOp(Camera UA)
      same => n,Hangup()
-
-    exten => ring,1,NoOp(Citofono Local ring into Stasis)
-     same => n,Answer()
-     same => n,Stasis(citofono,ring)
-     same => n,Hangup()
-
+  confbridge.conf: |
+    [general]
+    
+    [citofono_bridge]
+    type=bridge
+    max_members=4
+    mixing_interval=10
+    video_mode=sfu
+    remb_send_interval=1000
+    enable_events=yes
+    
+    [citofono_user]
+    type=user
+    quiet=yes
+    music_on_hold_when_empty=no
+    announce_user_count=no
+    dsp_drop_silence=no
+    
+    [citofono_cam]
+    type=user
+    quiet=yes
+    music_on_hold_when_empty=no
+    announce_user_count=no
+    marked=yes
+    startmuted=yes
   rtp.conf: |
     [general]
     rtpstart=10000
     rtpend=10200
     strictrtp=no
-    icesupport=no
-
   http.conf: |
     [general]
     enabled=yes
     bindaddr=127.0.0.1
     bindport=8088
-
   ari.conf: |
     [general]
     enabled=yes
     pretty=yes
-    allowed_origins=*
-
     [citofono]
     type=user
     read_only=no
     password=__ARI_PASSWORD__
-
   manager.conf: |
     [general]
     enabled=yes
     webenabled=no
     port=5038
     bindaddr=0.0.0.0
-
     [ha]
     secret=__AMI_SECRET__
     deny=0.0.0.0/0.0.0.0
