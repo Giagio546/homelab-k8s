@@ -170,7 +170,7 @@ spec:
               set -euo pipefail
               export DEBIAN_FRONTEND=noninteractive
               apt-get update -qq
-              apt-get install -y -qq --no-install-recommends baresip ffmpeg ca-certificates >/dev/null
+              apt-get install -y -qq --no-install-recommends baresip ffmpeg ca-certificates procps >/dev/null
               mkdir -p /root/.baresip
               sed "s|__SIP_300_PASSWORD__|${SIP_300_PASSWORD}|g" /baresip-src/accounts > /root/.baresip/accounts
               cp /baresip-src/config /root/.baresip/config
@@ -181,8 +181,8 @@ spec:
               exec baresip -f /root/.baresip -v
           readinessProbe:
             exec:
-              command: ["bash", "-c", "pgrep -x baresip >/dev/null"]
-            initialDelaySeconds: 60
+              command: ["bash", "-c", "grep -qa baresip /proc/[0-9]*/comm"]
+            initialDelaySeconds: 90
             periodSeconds: 15
             failureThreshold: 20
           resources:
