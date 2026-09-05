@@ -170,7 +170,7 @@ spec:
             - |
               set -euo pipefail
               mkdir -p /root/.baresip
-              sed "s|__SIP_300_PASSWORD__||g" /baresip-src/accounts > /root/.baresip/accounts
+              sed "s|__SIP_300_PASSWORD__|${SIP_300_PASSWORD}|g" /baresip-src/accounts > /root/.baresip/accounts
               cp /baresip-src/config /root/.baresip/config
               exec baresip -f /root/.baresip -v
           readinessProbe:
