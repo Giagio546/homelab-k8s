@@ -24,7 +24,8 @@ def ami_command(actions):
         for k, v in a.items():
             chunks.append(f"{k}: {v}")
         chunks.append("")
-    payload = "\r\n".join(chunks) + "\r\n"
+    crlf = chr(13) + chr(10)
+    payload = crlf.join(chunks) + crlf
     with socket.create_connection((AMI_HOST, AMI_PORT), timeout=5) as s:
         s.sendall(payload.encode("ascii"))
         s.settimeout(3)
