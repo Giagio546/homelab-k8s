@@ -164,9 +164,8 @@ spec:
               readOnly: true
             - name: baresip-home
               mountPath: /root/.baresip
-          command: ["/bin/bash", "-c"]
+          command: ["/bin/sh", "-c"]
           args:
-            - |
             - |
               set -euo pipefail
               mkdir -p /root/.baresip
@@ -175,7 +174,7 @@ spec:
               exec baresip -f /root/.baresip -v
           readinessProbe:
             exec:
-              command: ["bash", "-c", "grep -qa baresip /proc/[0-9]*/comm"]
+              command: ["sh", "-c", "grep -qa baresip /proc/[0-9]*/comm"]
             initialDelaySeconds: 90
             periodSeconds: 15
             failureThreshold: 20
